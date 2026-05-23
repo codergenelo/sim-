@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIM VAULT — Secure Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{font-family:'Inter',system-ui,sans-serif;box-sizing:border-box}
+    ::-webkit-scrollbar{width:5px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:rgba(59,130,246,.25);border-radius:10px}
+    ::-webkit-scrollbar-thumb:hover{background:rgba(59,130,246,.45)}
+
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pulseGlow{0%,100%{box-shadow:0 0 8px rgba(59,130,246,.3)}50%{box-shadow:0 0 20px rgba(59,130,246,.6)}}
+    @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    @keyframes spinSlow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes pulseRing{0%{transform:scale(.8);opacity:1}100%{transform:scale(2.2);opacity:0}}
+
+    .anim-fade-up{animation:fadeInUp .5s ease-out forwards}
+    .anim-fade{animation:fadeIn .4s ease-out forwards}
+    .anim-slide-right{animation:slideInRight .4s ease-out forwards}
+    .anim-slide-up{animation:slideUp .35s ease-out forwards}
+    .anim-shimmer{background:linear-gradient(90deg,transparent,rgba(59,130,246,.08),transparent);background-size:200% 100%;animation:shimmer 3s ease-in-out infinite}
+
+    .glass{background:rgba(15,23,42,.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(59,130,246,.1)}
+    .glass-strong{background:rgba(15,23,42,.8);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:1px solid rgba(59,130,246,.15)}
+    .glass-card{background:linear-gradient(135deg,rgba(15,23,42,.7),rgba(15,23,42,.4));backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(59,130,246,.08);transition:all .3s cubic-bezier(.4,0,.2,1)}
+    .glass-card:hover{border-color:rgba(59,130,246,.3);box-shadow:0 0 25px rgba(59,130,246,.1),inset 0 0 25px rgba(59,130,246,.03);transform:translateY(-2px)}
+
+    .glow-border{position:relative}
+    .glow-border::before{content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(59,130,246,.4),transparent 40%,transparent 60%,rgba(59,130,246,.2));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;opacity:0;transition:opacity .3s}
+    .glow-border:hover::before{opacity:1}
+
+    .input-field{background:rgba(8,12,24,.7);border:1px solid rgba(59,130,246,.12);border-radius:10px;padding:10px 14px;color:#e2e8f0;font-size:13px;transition:all .25s;width:100%;outline:none}
+    .input-field:focus{border-color:rgba(59,130,246,.5);box-shadow:0 0 0 3px rgba(59,130,246,.1),0 0 15px rgba(59,130,246,.08)}
+    .input-field::placeholder{color:rgba(148,163,184,.5)}
+    select.input-field{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+    select.input-field option{background:#0f172a;color:#e2e8f0}
+    textarea.input-field{resize:vertical;min-height:70px}
+
+    .btn-primary{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-weight:600;padding:10px 20px;border-radius:10px;border:none;cursor:pointer;transition:all .25s;font-size:13px;display:inline-flex;align-items:center;gap:8px}
+    .btn-primary:hover{background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 0 25px rgba(37,99,235,.4);transform:translateY(-1px)}
+    .btn-danger{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.2);padding:6px 12px;border-radius:8px;cursor:pointer;transition:all .25s;font-size:12px;display:inline-flex;align-items:center;gap:5px}
+    .btn-danger:hover{background:rgba(239,68,68,.25);border-color:rgba(239,68,68,.4);box-shadow:0 0 15px rgba(239,68,68,.15)}
+    .btn-ghost{background:transparent;color:#94a3b8;border:1px solid rgba(148,163,184,.15);padding:6px 12px;border-radius:8px;cursor:pointer;transition:all .25s;font-size:12px;display:inline-flex;align-items:center;gap:5px}
+    .btn-ghost:hover{color:#e2e8f0;border-color:rgba(148,163,184,.3);background:rgba(148,163,184,.05)}
+
+    .sim-item{animation:fadeInUp .4s ease-out forwards;opacity:0}
+    .sidebar-transition{transition:width .5s ease-in-out,min-width .5s ease-in-out}
+    .detail-transition{transition:width .5s ease-in-out,min-width .5s ease-in-out}
+
+    .field-error{color:#f87171;font-size:11px;margin-top:4px;display:none}
+    .field-error.visible{display:block}
+  </style>
+</head>
+<body class="min-h-screen bg-[#06080f] text-gray-200 overflow-hidden">
+
+  <!-- ══════════ LOADING SCREEN ══════════ -->
+  <div id="loading-screen" class="fixed inset-0 z-[100] bg-[#06080f] flex items-center justify-center">
+    <div class="text-center">
+      <div class="relative w-20 h-20 mx-auto mb-6">
+        <div class="absolute inset-0 rounded-full border-2 border-blue-500/20" style="animation:pulseRing 1.5s ease-out infinite"></div>
+        <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500" style="animation:spinSlow 1s linear infinite"></div>
+        <div class="absolute inset-2 rounded-full border-2 border-transparent border-b-cyan-400" style="animation:spinSlow 1.5s linear infinite reverse"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/><path d="M9 6h6v4H9z"/></svg>
+        </div>
+      </div>
+      <h2 class="text-white font-bold text-lg mb-1">SIM VAULT</h2>
+      <p class="text-slate-500 text-sm">Loading secure data...</p>
+    </div>
+  </div>
+
+  <!-- ══════════ APP ══════════ -->
+  <div id="app" class="hidden min-h-screen">
+
+    <!-- Background Effects -->
+    <div class="fixed inset-0 pointer-events-none z-0">
+      <div class="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-500/[.03] rounded-full blur-[150px]"></div>
+      <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-cyan-500/[.02] rounded-full blur-[130px]"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/[.015] rounded-full blur-[180px]"></div>
+    </div>
+
+    <!-- ═══ NAVBAR ═══ -->
+    <nav class="sticky top-0 z-40 glass-strong">
+      <div class="max-w-[1920px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/><path d="M9 6h6v4H9z"/></svg>
+          </div>
+          <div>
+            <h1 class="text-sm font-bold text-white tracking-wide">SIM VAULT</h1>
+            <p class="text-[10px] text-blue-400/70 font-medium tracking-widest uppercase">Secure Manager</p>
+          </div>
+        </div>
+        <div id="nav-stats" class="hidden md:flex items-center gap-2"></div>
+        <div class="flex items-center gap-3">
+          <div id="nav-count" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full glass text-xs text-blue-300"></div>
+          <button onclick="toggleSidebar()" class="btn-primary text-xs">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span class="hidden sm:inline">Add SIM</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ═══ MAIN 3-COLUMN LAYOUT ═══ -->
+    <div class="relative z-10 max-w-[1920px] mx-auto flex" style="height:calc(100vh - 64px)">
+
+      <!-- ─── LEFT SIDEBAR (Form) ─── -->
+      <aside id="sidebar" class="sidebar-transition overflow-hidden border-r border-blue-500/[.06] hidden lg:flex flex-col" style="width:0;min-width:0">
+        <div class="h-full overflow-y-auto p-5" style="width:380px;min-width:380px" id="sidebar-inner"></div>
+      </aside>
+
+      <!-- ─── MIDDLE (SIM List) ─── -->
+      <main class="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <div class="p-4 border-b border-blue-500/[.06] space-y-3">
+          <div class="flex items-center gap-3">
+            <div class="relative flex-1">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+              <input type="text" id="search-input" class="input-field pl-9" placeholder="Search by name, number, provider...">
+            </div>
+            <select id="filter-provider" class="input-field w-auto min-w-[130px]">
+              <option value="All">All Providers</option>
+            </select>
+          </div>
+          <div id="list-meta" class="flex items-center gap-4 text-[11px] text-slate-500"></div>
+        </div>
+        <div id="sim-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+      </main>
+
+      <!-- ─── RIGHT (Detail Panel) ─── -->
+      <aside id="detail-panel" class="detail-transition overflow-hidden border-l border-blue-500/[.06] hidden lg:flex flex-col" style="width:0;min-width:0">
+        <div class="h-full overflow-y-auto" style="width:420px;min-width:420px" id="detail-inner">
+          <div class="h-full flex items-center justify-center px-8">
+            <div class="text-center anim-fade">
+              <div class="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/><path d="M9 6h6v4H9z"/></svg>
+              </div>
+              <p class="text-sm text-slate-500">Select a SIM card to view details</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ═══ MOBILE FORM OVERLAY ═══ -->
+    <div id="mobile-form-overlay" class="fixed inset-0 z-50 hidden lg:hidden">
+      <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeMobileForm()"></div>
+      <div class="absolute inset-x-0 bottom-0 top-12 bg-[#0a0f1a] rounded-t-2xl overflow-y-auto border-t border-blue-500/20 anim-slide-up" id="mobile-form-inner"></div>
+    </div>
+
+    <!-- ═══ MOBILE DETAIL OVERLAY ═══ -->
+    <div id="mobile-detail-overlay" class="fixed inset-0 z-50 hidden lg:hidden">
+      <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeMobileDetail()"></div>
+      <div class="absolute inset-0 bg-[#06080f] overflow-y-auto anim-slide-right pt-4" id="mobile-detail-inner"></div>
+    </div>
+
+    <!-- ═══ DELETE CONFIRMATION MODAL ═══ -->
+    <div id="delete-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="cancelDelete()"></div>
+      <div class="relative glass-strong rounded-2xl p-6 max-w-sm w-full anim-fade-up">
+        <div class="w-12 h-12 rounded-full bg-red-500/15 flex items-center justify-center mx-auto mb-4">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        </div>
+        <h3 class="text-white font-bold text-center mb-2">Delete SIM Card?</h3>
+        <p class="text-slate-400 text-sm text-center mb-6">This action cannot be undone. All stored data for this SIM will be permanently removed.</p>
+        <div class="flex gap-3">
+          <button onclick="cancelDelete()" class="btn-ghost flex-1 py-2.5 justify-center">Cancel</button>
+          <button onclick="confirmDelete()" class="flex-1 py-2.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 font-semibold text-sm hover:bg-red-500/30 transition-all cursor-pointer">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ════════════════════════════════════════
+       CONSTANTS
+       ════════════════════════════════════════ */
+    const STORAGE_KEY = 'sim_card_manager_data';
+    const PROVIDERS = ['Vodacom','Airtel','Tigo','Halotel','TTCL','MTN','Orange'];
+    const AUTH_TYPES = ['SMS OTP','Email OTP','Google Authenticator','2FA','Backup Codes'];
+    const COUNTRIES = ['Tanzania','Kenya','Uganda','Nigeria','South Africa','Ghana','Rwanda','Burundi','Mozambique','DRC','Zambia','Malawi','Ethiopia','Other'];
+    const PROVIDER_COLORS = { Vodacom:'#e60000', Airtel:'#ed1c24', Tigo:'#00a3e0', Halotel:'#00a651', TTCL:'#ff8c00', MTN:'#ffcc00', Orange:'#ff6600' };
+    const PROVIDER_BG = { Vodacom:'rgba(230,0,0,.15)', Airtel:'rgba(237,28,36,.15)', Tigo:'rgba(0,163,224,.15)', Halotel:'rgba(0,166,81,.15)', TTCL:'rgba(255,140,0,.15)', MTN:'rgba(255,204,0,.15)', Orange:'rgba(255,102,0,.15)' };
+
+    /* ════════════════════════════════════════
+       STATE
+       ════════════════════════════════════════ */
+    let sims = [];
+    let selectedSimId = null;
+    let searchQuery = '';
+    let filterProvider = 'All';
+    let sidebarOpen = false;
+    let deleteConfirmId = null;
+    let revealedFields = {};
+    let imagePreview = '';
+
+    /* ════════════════════════════════════════
+       UTILITY FUNCTIONS
+       ════════════════════════════════════════ */
+    function generateId() {
+      return 'sim_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
+    }
+
+    function loadSims() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch { return []; }
+    }
+
+    function saveSims() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(sims)); } catch {}
+    }
+
+    function formatDate(iso) {
+      try {
+        return new Date(iso).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      } catch { return iso; }
+    }
+
+    function maskSecret(str) {
+      if (!str) return '—';
+      if (str.length <= 4) return '\u2022'.repeat(str.length);
+      return str.slice(0, 2) + '\u2022'.repeat(str.length - 4) + str.slice(-2);
+    }
+
+    function esc(str) {
+      if (!str) return '';
+      const d = document.createElement('div');
+      d.textContent = String(str);
+      return d.innerHTML;
+    }
+
+    function getFilteredSims() {
+      return sims.filter(sim => {
+        const q = searchQuery.toLowerCase().trim();
+        const matchSearch = !q || sim.simName.toLowerCase().includes(q) || sim.ownerName.toLowerCase().includes(q) || sim.phoneNumber.includes(q) || sim.email.toLowerCase().includes(q) || sim.provider.toLowerCase().includes(q);
+        const matchProvider = filterProvider === 'All' || sim.provider === filterProvider;
+        return matchSearch && matchProvider;
+      });
+    }
+
+    function getStats() {
+      const pc = {};
+      PROVIDERS.forEach(p => pc[p] = 0);
+      sims.forEach(s => { if (pc[s.provider] !== undefined) pc[s.provider]++; });
+      const totalBalance = sims.reduce((a, s) => { const v = parseFloat(s.balance); return a + (isNaN(v) ? 0 : v); }, 0);
+      return { total: sims.length, providerCounts: pc, totalBalance };
+    }
+
+    function getSelectedSim() {
+      return sims.find(s => s.id === selectedSimId) || null;
+    }
+
+    /* ════════════════════════════════════════
+       SVG ICON HELPERS
+       ════════════════════════════════════════ */
+    const ICONS = {
+      phone: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>',
+      mail: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+      globe: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>',
+      wallet: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
+      shield: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+      user: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      network: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/></svg>',
+      note: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>',
+      calendar: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+      trash: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>',
+      eye: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+      eyeOff: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/><path d="M14.12 14.12a3 3 0 01-4.24-4.24"/></svg>',
+      back: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
+      plus: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+      upload: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+      search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+      sim: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/><path d="M9 6h6v4H9z"/></svg>',
+    };
+
+    /* ════════════════════════════════════════
+       FORM HTML GENERATOR
+       ════════════════════════════════════════ */
+    function formHTML(pfx, closeFn) {
+      return `
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="w-1.5 h-5 rounded-full bg-gradient-to-b from-blue-400 to-cyan-400"></span>
+            Add New SIM
+          </h2>
+          <button onclick="${closeFn}" class="text-slate-500 hover:text-white transition-colors text-xl leading-none cursor-pointer">&times;</button>
+        </div>
+        <form id="${pfx}-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-2">SIM Photo / Avatar</label>
+            <div onclick="document.getElementById('${pfx}-file-input').click()" class="relative w-full h-28 rounded-xl border-2 border-dashed border-blue-500/20 hover:border-blue-500/40 transition-all cursor-pointer overflow-hidden group">
+              <div id="${pfx}-img-preview" class="w-full h-full">
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 group-hover:text-blue-400 transition-colors">
+                  ${ICONS.upload}
+                  <span class="text-[11px] mt-1">Click to upload</span>
+                </div>
+              </div>
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <span class="text-xs text-white font-medium">Change Image</span>
+              </div>
+            </div>
+            <input type="file" id="${pfx}-file-input" accept="image/*" class="hidden">
+            <div id="${pfx}-img-error" class="field-error"></div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">SIM Name *</label>
+            <input type="text" id="${pfx}-sim-name" class="input-field" placeholder="e.g. Business Line">
+            <div id="${pfx}-sim-name-error" class="field-error"></div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Owner Full Name *</label>
+            <input type="text" id="${pfx}-owner-name" class="input-field" placeholder="John Doe">
+            <div id="${pfx}-owner-error" class="field-error"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1.5">Phone Number *</label>
+              <input type="tel" id="${pfx}-phone" class="input-field" placeholder="+255 xxx xxx xxx">
+              <div id="${pfx}-phone-error" class="field-error"></div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1.5">Email</label>
+              <input type="email" id="${pfx}-email" class="input-field" placeholder="user@email.com">
+              <div id="${pfx}-email-error" class="field-error"></div>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <label class="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">${ICONS.shield} Security Credentials</label>
+            <div>
+              <label class="block text-[11px] text-slate-500 mb-1">SIM Password</label>
+              <input type="text" id="${pfx}-password" class="input-field" placeholder="Enter SIM password">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] text-slate-500 mb-1">PIN Code</label>
+                <input type="text" id="${pfx}-pin" class="input-field" placeholder="e.g. 1234">
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-500 mb-1">PUK Code</label>
+                <input type="text" id="${pfx}-puk" class="input-field" placeholder="Enter PUK">
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1.5">Network Provider</label>
+              <select id="${pfx}-provider" class="input-field">${PROVIDERS.map(p => `<option value="${p}">${p}</option>`).join('')}</select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1.5">Auth Type</label>
+              <select id="${pfx}-auth" class="input-field">${AUTH_TYPES.map(a => `<option value="${a}">${a}</option>`).join('')}</select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1.5">Country</label>
+              <select id="${pfx}-country" class="input-field">${COUNTRIES.map(c => `<option value="${c}">${c}</option>`).join('')}</select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1.5">Balance</label>
+              <input type="text" id="${pfx}-balance" class="input-field" placeholder="e.g. 5000">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Notes</label>
+            <textarea id="${pfx}-notes" class="input-field" rows="3" placeholder="Additional notes about this SIM..."></textarea>
+          </div>
+          <button type="submit" class="btn-primary w-full justify-center py-3 text-sm">${ICONS.plus} Save SIM Card</button>
+        </form>
+      `;
+    }
+
+    /* ════════════════════════════════════════
+       RENDER: NAVBAR STATS
+       ════════════════════════════════════════ */
+    function renderNavStats() {
+      const stats = getStats();
+      const statsEl = document.getElementById('nav-stats');
+      statsEl.innerHTML = PROVIDERS.filter(p => stats.providerCounts[p] > 0).map(p =>
+        `<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style="background:${PROVIDER_BG[p]};color:${PROVIDER_COLORS[p]};border:1px solid ${PROVIDER_COLORS[p]}22">
+          <span class="w-1.5 h-1.5 rounded-full" style="background:${PROVIDER_COLORS[p]}"></span>
+          ${p} <span class="opacity-70">${stats.providerCounts[p]}</span>
+        </div>`
+      ).join('');
+
+      document.getElementById('nav-count').innerHTML =
+        `<span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> ${stats.total} SIM${stats.total !== 1 ? 's' : ''} Stored`;
+    }
+
+    /* ════════════════════════════════════════
+       RENDER: SIM LIST
+       ════════════════════════════════════════ */
+    function renderSimList() {
+      const filtered = getFilteredSims();
+      const stats = getStats();
+      const listEl = document.getElementById('sim-list');
+      const metaEl = document.getElementById('list-meta');
+
+      metaEl.innerHTML = `<span>${filtered.length} result${filtered.length !== 1 ? 's' : ''}</span>` +
+        (stats.total > 0 ? `<span>Total Balance: <span class="text-blue-400 font-semibold">${stats.totalBalance.toLocaleString()}</span></span>` : '');
+
+      if (filtered.length === 0) {
+        const hasSearch = searchQuery.length > 0 || filterProvider !== 'All';
+        listEl.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-20 anim-fade">
+            <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border border-blue-500/10 flex items-center justify-center mb-6">
+              ${hasSearch
+                ? '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>'
+                : '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/><line x1="12" y1="8" x2="12" y2="14"/><line x1="9" y1="11" x2="15" y2="11"/></svg>'
+              }
+            </div>
+            <h3 class="text-white font-semibold mb-2">${hasSearch ? 'No Results Found' : 'No SIM Cards Yet'}</h3>
+            <p class="text-slate-500 text-sm mb-6 text-center max-w-xs">${hasSearch
+              ? 'Try adjusting your search or filter criteria to find what you\'re looking for.'
+              : 'Start by adding your first SIM card. All data is stored securely on your device.'}</p>
+            ${!hasSearch ? `<button onclick="toggleSidebar()" class="btn-primary">${ICONS.plus} Add Your First SIM</button>` : ''}
+          </div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map((sim, i) => {
+        const pc = PROVIDER_COLORS[sim.provider];
+        const pb = PROVIDER_BG[sim.provider];
+        const sel = selectedSimId === sim.id;
+        const avatar = sim.image
+          ? `<img src="${sim.image}" alt="${esc(sim.simName)}" class="w-full h-full object-cover">`
+          : `<div class="w-full h-full flex items-center justify-center text-lg font-bold" style="background:${pb};color:${pc}">${esc(sim.simName.charAt(0).toUpperCase())}</div>`;
+
+        return `
+          <div class="sim-item glass-card glow-border rounded-xl p-4 cursor-pointer ${sel ? 'ring-1 ring-blue-500/40' : ''}" style="animation-delay:${i * 60}ms" onclick="selectSim('${sim.id}')">
+            <div class="flex items-start gap-3">
+              <div class="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 border" style="border-color:${pc}44">${avatar}</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <h3 class="text-sm font-semibold text-white truncate">${esc(sim.simName)}</h3>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0" style="background:${pb};color:${pc}">${esc(sim.provider)}</span>
+                </div>
+                <p class="text-xs text-slate-400 mb-1.5">${esc(sim.ownerName)}</p>
+                <div class="flex items-center gap-3 text-[11px] text-slate-500">
+                  <span class="flex items-center gap-1">${ICONS.phone} ${esc(sim.phoneNumber)}</span>
+                  ${sim.email ? `<span class="flex items-center gap-1 hidden sm:flex">${ICONS.mail} ${esc(sim.email)}</span>` : ''}
+                </div>
+              </div>
+              <div class="flex-shrink-0 flex flex-col items-end gap-2">
+                <span class="text-[10px] text-slate-600">${formatDate(sim.createdAt).split(',')[0]}</span>
+                <button onclick="event.stopPropagation();showDeleteConfirm('${sim.id}')" class="btn-danger text-[10px] py-1 px-2">${ICONS.trash}</button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between mt-3 pt-3 border-t border-white/[.04]">
+              <div class="flex items-center gap-3 text-[10px] text-slate-500">
+                <span class="flex items-center gap-1">${ICONS.globe} ${esc(sim.country)}</span>
+                <span class="flex items-center gap-1">${ICONS.shield} ${esc(sim.authType)}</span>
+              </div>
+              ${sim.balance ? `<span class="text-[11px] font-semibold text-blue-400">Balance: ${esc(sim.balance)}</span>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    /* ════════════════════════════════════════
+       RENDER: DETAIL PANEL
+       ════════════════════════════════════════ */
+    function renderDetail(targetId) {
+      const sim = sims.find(s => s.id === targetId);
+      if (!sim) return '';
+
+      const pc = PROVIDER_COLORS[sim.provider];
+      const pb = PROVIDER_BG[sim.provider];
+      const provCount = sims.filter(s => s.provider === sim.provider).length;
+      const barW = Math.min(100, (provCount / Math.max(1, sims.length)) * 100);
+
+      const avatar = sim.image
+        ? `<img src="${sim.image}" alt="${esc(sim.simName)}" class="w-full h-full object-cover">`
+        : `<div class="w-full h-full flex items-center justify-center text-2xl font-bold" style="background:${pb};color:${pc}">${esc(sim.simName.charAt(0).toUpperCase())}</div>`;
+
+      function secretRow(label, value, field) {
+        const revealed = !!revealedFields[field];
+        const display = revealed ? (value || '\u2014') : maskSecret(value);
+        const toggleIcon = revealed ? ICONS.eyeOff : ICONS.eye;
+        return `<div class="flex items-center justify-between py-2.5">
+          <span class="text-xs text-slate-400">${label}</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-mono text-slate-200">${esc(display)}</span>
+            ${value ? `<button onclick="toggleSecret('${field}')" class="text-slate-500 hover:text-blue-400 transition-colors cursor-pointer p-0.5" title="${revealed ? 'Hide' : 'Reveal'}">${toggleIcon}</button>` : ''}
+          </div>
+        </div>`;
+      }
+
+      return `
+        <div class="p-5 space-y-5">
+          <div class="flex items-center justify-between">
+            <button onclick="closeDetail()" class="btn-ghost">${ICONS.back} Back</button>
+            <button onclick="showDeleteConfirm('${sim.id}')" class="btn-danger text-[11px]">${ICONS.trash} Delete</button>
+          </div>
+
+          <div class="glass-card rounded-2xl overflow-hidden">
+            <div class="h-24 relative" style="background:linear-gradient(135deg,${pc}33,${pc}11)">
+              <div class="absolute inset-0 anim-shimmer"></div>
+              <div class="absolute -bottom-8 left-5">
+                <div class="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#0a0f1a] shadow-xl" style="box-shadow:0 0 20px ${pc}33">${avatar}</div>
+              </div>
+            </div>
+            <div class="pt-11 px-5 pb-5">
+              <div class="flex items-center gap-2 mb-1">
+                <h2 class="text-lg font-bold text-white">${esc(sim.simName)}</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold" style="background:${pb};color:${pc};border:1px solid ${pc}33">${esc(sim.provider)}</span>
+              </div>
+              <p class="text-sm text-slate-400">${esc(sim.ownerName)}</p>
+              <p class="text-[11px] text-slate-600 mt-1 flex items-center gap-1">${ICONS.calendar} Added ${formatDate(sim.createdAt)}</p>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-xl overflow-hidden anim-fade">
+            <div class="px-4 py-3 border-b border-blue-500/15 flex items-center gap-2">
+              <span style="color:#3b82f6">${ICONS.user}</span>
+              <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Owner Information</h3>
+            </div>
+            <div class="px-4 py-2 space-y-0.5">
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-xs text-slate-400 flex items-center gap-1.5">${ICONS.phone} Phone Number</span>
+                <span class="text-xs font-medium text-slate-200">${esc(sim.phoneNumber)}</span>
+              </div>
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-xs text-slate-400 flex items-center gap-1.5">${ICONS.mail} Email</span>
+                <span class="text-xs font-medium text-slate-200">${sim.email ? esc(sim.email) : '\u2014'}</span>
+              </div>
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-xs text-slate-400 flex items-center gap-1.5">${ICONS.globe} Country</span>
+                <span class="text-xs font-medium text-slate-200">${esc(sim.country)}</span>
+              </div>
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-xs text-slate-400 flex items-center gap-1.5">${ICONS.wallet} Balance</span>
+                <span class="text-xs font-semibold text-blue-400">${sim.balance ? esc(sim.balance) : '\u2014'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-xl overflow-hidden anim-fade">
+            <div class="px-4 py-3 border-b border-yellow-500/15 flex items-center gap-2">
+              <span style="color:#f59e0b">${ICONS.shield}</span>
+              <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Security Information</h3>
+            </div>
+            <div class="px-4 py-2 space-y-0.5">
+              ${secretRow('SIM Password', sim.simPassword, 'password')}
+              ${secretRow('PIN Code', sim.pinCode, 'pin')}
+              ${secretRow('PUK Code', sim.pukCode, 'puk')}
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-xs text-slate-400 flex items-center gap-1.5">${ICONS.shield} Auth Type</span>
+                <span class="text-xs font-medium text-slate-200">${esc(sim.authType)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-xl overflow-hidden anim-fade">
+            <div class="px-4 py-3 border-b border-emerald-500/15 flex items-center gap-2">
+              <span style="color:#10b981">${ICONS.network}</span>
+              <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Network Information</h3>
+            </div>
+            <div class="px-4 py-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-400">Provider</span>
+                <span class="text-xs font-semibold" style="color:${pc}">${esc(sim.provider)}</span>
+              </div>
+              <div class="h-2 rounded-full bg-slate-800/50 overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-1000" style="width:${barW}%;background:linear-gradient(90deg,${pc},${pc}88)"></div>
+              </div>
+              <p class="text-[10px] text-slate-600">${provCount} of ${sims.length} SIMs use ${esc(sim.provider)}</p>
+            </div>
+          </div>
+
+          ${sim.notes ? `
+          <div class="glass-card rounded-xl overflow-hidden anim-fade">
+            <div class="px-4 py-3 border-b border-violet-500/15 flex items-center gap-2">
+              <span style="color:#8b5cf6">${ICONS.note}</span>
+              <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Notes</h3>
+            </div>
+            <div class="px-4 py-3">
+              <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">${esc(sim.notes)}</p>
+            </div>
+          </div>` : ''}
+
+          <div class="h-8"></div>
+        </div>`;
+    }
+
+    function updateDetailPanel() {
+      const panel = document.getElementById('detail-inner');
+      const sidebar = document.getElementById('detail-panel');
+      const mobileOverlay = document.getElementById('mobile-detail-overlay');
+      const mobileInner = document.getElementById('mobile-detail-inner');
+
+      if (selectedSimId) {
+        const html = renderDetail(selectedSimId);
+        panel.innerHTML = html;
+        mobileInner.innerHTML = html;
+        // Open desktop panel
+        sidebar.style.width = '420px';
+        sidebar.style.minWidth = '420px';
+        // Open mobile overlay
+        if (window.innerWidth < 1024) {
+          mobileOverlay.classList.remove('hidden');
+        }
+      } else {
+        panel.innerHTML = `<div class="h-full flex items-center justify-center px-8"><div class="text-center anim-fade"><div class="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto mb-4">${ICONS.sim.replace('stroke="currentColor"','stroke="#64748b"')}</div><p class="text-sm text-slate-500">Select a SIM card to view details</p></div></div>`;
+        mobileInner.innerHTML = '';
+        sidebar.style.width = '0';
+        sidebar.style.minWidth = '0';
+        mobileOverlay.classList.add('hidden');
+      }
+    }
+
+    /* ════════════════════════════════════════
+       ACTIONS
+       ════════════════════════════════════════ */
+    function toggleSidebar() {
+      sidebarOpen = !sidebarOpen;
+      const sidebar = document.getElementById('sidebar');
+      const mobileOverlay = document.getElementById('mobile-form-overlay');
+      const mobileInner = document.getElementById('mobile-form-inner');
+
+      if (sidebarOpen) {
+        sidebar.style.width = '380px';
+        sidebar.style.minWidth = '380px';
+        if (window.innerWidth < 1024) {
+          mobileOverlay.classList.remove('hidden');
+        }
+      } else {
+        sidebar.style.width = '0';
+        sidebar.style.minWidth = '0';
+        mobileOverlay.classList.add('hidden');
+      }
+    }
+
+    function closeSidebar() {
+      sidebarOpen = false;
+      document.getElementById('sidebar').style.width = '0';
+      document.getElementById('sidebar').style.minWidth = '0';
+      document.getElementById('mobile-form-overlay').classList.add('hidden');
+    }
+
+    function closeMobileForm() {
+      sidebarOpen = false;
+      document.getElementById('sidebar').style.width = '0';
+      document.getElementById('sidebar').style.minWidth = '0';
+      document.getElementById('mobile-form-overlay').classList.add('hidden');
+    }
+
+    function closeMobileDetail() {
+      selectedSimId = null;
+      document.getElementById('detail-panel').style.width = '0';
+      document.getElementById('detail-panel').style.minWidth = '0';
+      document.getElementById('mobile-detail-overlay').classList.add('hidden');
+      renderSimList();
+    }
+
+    function closeDetail() {
+      selectedSimId = null;
+      updateDetailPanel();
+      renderSimList();
+    }
+
+    function selectSim(id) {
+      selectedSimId = id;
+      revealedFields = {};
+      updateDetailPanel();
+      renderSimList();
+    }
+
+    function showDeleteConfirm(id) {
+      deleteConfirmId = id;
+      document.getElementById('delete-modal').classList.remove('hidden');
+    }
+
+    function cancelDelete() {
+      deleteConfirmId = null;
+      document.getElementById('delete-modal').classList.add('hidden');
+    }
+
+    function confirmDelete() {
+      if (!deleteConfirmId) return;
+      sims = sims.filter(s => s.id !== deleteConfirmId);
+      saveSims();
+      if (selectedSimId === deleteConfirmId) {
+        selectedSimId = null;
+        updateDetailPanel();
+      }
+      deleteConfirmId = null;
+      document.getElementById('delete-modal').classList.add('hidden');
+      renderNavStats();
+      renderSimList();
+    }
+
+    function toggleSecret(field) {
+      revealedFields[field] = !revealedFields[field];
+      updateDetailPanel();
+    }
+
+    /* ════════════════════════════════════════
+       FORM HANDLING
+       ════════════════════════════════════════ */
+    function collectFormData(pfx) {
+      return {
+        simName: (document.getElementById(pfx + '-sim-name') || {}).value || '',
+        ownerName: (document.getElementById(pfx + '-owner-name') || {}).value || '',
+        phoneNumber: (document.getElementById(pfx + '-phone') || {}).value || '',
+        email: (document.getElementById(pfx + '-email') || {}).value || '',
+        simPassword: (document.getElementById(pfx + '-password') || {}).value || '',
+        pinCode: (document.getElementById(pfx + '-pin') || {}).value || '',
+        pukCode: (document.getElementById(pfx + '-puk') || {}).value || '',
+        provider: (document.getElementById(pfx + '-provider') || {}).value || 'Vodacom',
+        authType: (document.getElementById(pfx + '-auth') || {}).value || 'SMS OTP',
+        country: (document.getElementById(pfx + '-country') || {}).value || 'Tanzania',
+        balance: (document.getElementById(pfx + '-balance') || {}).value || '',
+        notes: (document.getElementById(pfx + '-notes') || {}).value || '',
+        image: imagePreview,
+      };
+    }
+
+    function validateForm(pfx) {
+      const d = collectFormData(pfx);
+      let valid = true;
+      function err(id, msg) {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = msg; el.classList.add('visible'); }
+        valid = false;
+      }
+      function clr(id) {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = ''; el.classList.remove('visible'); }
+      }
+      clr(pfx + '-sim-name-error'); clr(pfx + '-owner-error'); clr(pfx + '-phone-error'); clr(pfx + '-email-error'); clr(pfx + '-img-error');
+
+      if (!d.simName.trim()) err(pfx + '-sim-name-error', 'SIM name is required');
+      if (!d.ownerName.trim()) err(pfx + '-owner-error', 'Owner name is required');
+      if (!d.phoneNumber.trim()) err(pfx + '-phone-error', 'Phone number is required');
+      if (d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) err(pfx + '-email-error', 'Invalid email format');
+      return valid ? d : null;
+    }
+
+    function resetFormFields(pfx) {
+      const ids = ['sim-name','owner-name','phone','email','password','pin','puk','balance','notes'];
+      ids.forEach(id => { const el = document.getElementById(pfx + '-' + id); if (el) el.value = ''; });
+      const prov = document.getElementById(pfx + '-provider'); if (prov) prov.value = 'Vodacom';
+      const auth = document.getElementById(pfx + '-auth'); if (auth) auth.value = 'SMS OTP';
+      const country = document.getElementById(pfx + '-country'); if (country) country.value = 'Tanzania';
+      const preview = document.getElementById(pfx + '-img-preview');
+      if (preview) preview.innerHTML = `<div class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 group-hover:text-blue-400 transition-colors">${ICONS.upload}<span class="text-[11px] mt-1">Click to upload</span></div>`;
+      const fileInput = document.getElementById(pfx + '-file-input');
+      if (fileInput) fileInput.value = '';
+      imagePreview = '';
+      ['sim-name-error','owner-error','phone-error','email-error','img-error'].forEach(id => {
+        const el = document.getElementById(pfx + '-' + id);
+        if (el) { el.textContent = ''; el.classList.remove('visible'); }
+      });
+    }
+
+    function handleFormSubmit(e, pfx) {
+      e.preventDefault();
+      const data = validateForm(pfx);
+      if (!data) return;
+
+      const newSim = {
+        id: generateId(),
+        ...data,
+        createdAt: new Date().toISOString(),
+      };
+      sims.unshift(newSim);
+      saveSims();
+      resetFormFields('d');
+      resetFormFields('m');
+      closeSidebar();
+      renderNavStats();
+      renderSimList();
+    }
+
+    function handleImageUpload(e, pfx) {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) {
+        const errEl = document.getElementById(pfx + '-img-error');
+        if (errEl) { errEl.textContent = 'Image must be under 2MB'; errEl.classList.add('visible'); }
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        imagePreview = reader.result;
+        const previewEl = document.getElementById(pfx + '-img-preview');
+        if (previewEl) previewEl.innerHTML = `<img src="${imagePreview}" class="w-full h-full object-cover">`;
+        const errEl = document.getElementById(pfx + '-img-error');
+        if (errEl) { errEl.textContent = ''; errEl.classList.remove('visible'); }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /* ════════════════════════════════════════
+       INITIALIZATION
+       ════════════════════════════════════════ */
+    function init() {
+      // Populate filter provider dropdown
+      const filterSel = document.getElementById('filter-provider');
+      PROVIDERS.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p; opt.textContent = p;
+        filterSel.appendChild(opt);
+      });
+
+      // Generate form HTML for both desktop and mobile
+      document.getElementById('sidebar-inner').innerHTML = formHTML('d', 'closeSidebar()');
+      document.getElementById('mobile-form-inner').innerHTML =
+        `<div class="p-5"><div class="flex items-center justify-between mb-4"><h2 class="text-sm font-bold text-white">Add New SIM</h2><button onclick="closeMobileForm()" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer">&times;</button></div>${formHTML('m', 'closeMobileForm()')}</div>`;
+
+      // Attach form submit handlers
+      ['d', 'm'].forEach(pfx => {
+        const form = document.getElementById(pfx + '-form');
+        if (form) form.addEventListener('submit', e => handleFormSubmit(e, pfx));
+
+        const fileInput = document.getElementById(pfx + '-file-input');
+        if (fileInput) fileInput.addEventListener('change', e => handleImageUpload(e, pfx));
+      });
+
+      // Search handler with debounce
+      let searchTimer;
+      document.getElementById('search-input').addEventListener('input', e => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+          searchQuery = e.target.value;
+          renderSimList();
+        }, 200);
+      });
+
+      // Filter handler
+      document.getElementById('filter-provider').addEventListener('change', e => {
+        filterProvider = e.target.value;
+        renderSimList();
+      });
+
+      // Handle window resize — adjust overlay visibility
+      window.addEventListener('resize', () => {
+        const w = window.innerWidth;
+        const mobileForm = document.getElementById('mobile-form-overlay');
+        const mobileDetail = document.getElementById('mobile-detail-overlay');
+        if (w >= 1024) {
+          mobileForm.classList.add('hidden');
+          mobileDetail.classList.add('hidden');
+        } else {
+          if (sidebarOpen) mobileForm.classList.remove('hidden');
+          if (selectedSimId) mobileDetail.classList.remove('hidden');
+        }
+      });
+
+      // Load data after loading screen
+      setTimeout(() => {
+        sims = loadSims();
+        document.getElementById('loading-screen').style.opacity = '0';
+        document.getElementById('loading-screen').style.transition = 'opacity 0.4s';
+        document.getElementById('app').classList.remove('hidden');
+        setTimeout(() => {
+          document.getElementById('loading-screen').style.display = 'none';
+        }, 400);
+        renderNavStats();
+        renderSimList();
+      }, 900);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
